@@ -1,16 +1,13 @@
 package online.pizzacrust.rmc;
 
+import com.google.gson.Gson;
+
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileReader;
-import java.io.IOException;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
 
 import online.pizzacrust.rmc.classes.ItemBaseClass;
 
@@ -39,13 +36,25 @@ public class RecursiveAssembler {
         File[] children = directory.listFiles();
         for (File child : children) {
             if (!child.isDirectory()) {
-                if (child.getName().endsWith("localscript")) {
+                if (child.getName().endsWith(".localscript.lua")) {
                     dir.getChildrenClasses().add(new ItemBaseClass(new ArrayList<>(),
-                            "LocalScript", child.getName(), new ArrayList<>(), readFile(child)));
+                            "LocalScript", child.getName().replace(".localscript.lua", ""), new
+                            ArrayList<>(), readFile
+                            (child)));
+                    continue;
+                }
+                if (child.getName().endsWith(".value.json")) {
+                    ValuePojo pojo = new Gson().fromJson(readFile(child), ValuePojo.class);
+                    ItemBaseClass itemBaseClass = new ItemBaseClass(new ArrayList<>(), pojo.type
+                            .getClassName(), pojo.name, new ArrayList<>(), null);
+                    itemBaseClass.getValues().add(new ItemBaseClass.PropertyValue(pojo.type
+                            .getPrimitiveType(), "Value", pojo.value));
+                    dir.getChildrenClasses().add(itemBaseClass);
                     continue;
                 }
                 dir.getChildrenClasses().add(new ItemBaseClass(new ArrayList<>(),
-                        "Script", child.getName(), new ArrayList<>(), readFile(child)));
+                        "Script", child.getName().replace(".lua", ""), new ArrayList<>(), readFile
+                        (child)));
                 continue;
 
             }
@@ -62,13 +71,22 @@ public class RecursiveAssembler {
                 new ArrayList<>(), null);
         for (File rootFile : rootFiles) {
             if (!rootFile.isDirectory()) {
-                if (rootFile.getName().endsWith("localscript")) {
+                if (rootFile.getName().endsWith(".localscript.lua")) {
                     model.getChildrenClasses().add(new ItemBaseClass(new ArrayList<>(),
-                            "LocalScript", rootFile.getName(), new ArrayList<>(), readFile(rootFile)));
+                            "LocalScript", rootFile.getName().replace(".localscript.lua", ""), new ArrayList<>(), readFile(rootFile)));
+                    continue;
+                }
+                if (rootFile.getName().endsWith(".value.json")) {
+                    ValuePojo pojo = new Gson().fromJson(readFile(rootFile), ValuePojo.class);
+                    ItemBaseClass itemBaseClass = new ItemBaseClass(new ArrayList<>(), pojo.type
+                            .getClassName(), pojo.name, new ArrayList<>(), null);
+                    itemBaseClass.getValues().add(new ItemBaseClass.PropertyValue(pojo.type
+                            .getPrimitiveType(), "Value", pojo.value));
+                    model.getChildrenClasses().add(itemBaseClass);
                     continue;
                 }
                 model.getChildrenClasses().add(new ItemBaseClass(new ArrayList<>(),
-                        "Script", rootFile.getName(), new ArrayList<>(), readFile(rootFile)));
+                        "Script", rootFile.getName().replace(".lua", ""), new ArrayList<>(), readFile(rootFile)));
                 continue;
             }
             ItemBaseClass itemBaseClass = handle(rootFile);
